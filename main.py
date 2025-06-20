@@ -26,6 +26,10 @@ tile_textures = {
 	2: pygame.image.load('resources/img/block_stone.png')
 }
 
+item_textures = {
+	1: pygame.image.load('resources/img/pick.png')
+}
+
 world = []
 
 def is_solid(x, y):
@@ -49,7 +53,7 @@ class player:
 		self.x = x
 		self.y = y
 		self.vel_y = 0
-		self.speed = 2
+		self.speed = 10
 		self.on_ground = False
 		self.gravity = 0.3
 		self.jump_force = -6
@@ -57,6 +61,10 @@ class player:
 		self.crouching = False
 		self.rat_stand = pygame.image.load('resources/img/rat.png')
 		self.rat_crouch = pygame.image.load('resources/img/crouched_rat.png')
+		self.inventory = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		self.invslot = pygame.image.load('resources/img/empty_inv.png')
+		self.selectedslot = pygame.image.load('resources/img/selected_inv.png')
+		self.selectedslot_id = 0
 	
 	def update(self, keys):
 		if keys[pygame.K_LEFT]:
@@ -75,6 +83,25 @@ class player:
 					self.vel_y = self.jump_force
 					self.on_ground = False
 		
+		if keys[pygame.K_0]:
+			self.selectedslot_id = 0
+		if keys[pygame.K_1]:
+			self.selectedslot_id = 1
+		if keys[pygame.K_2]:
+			self.selectedslot_id = 2
+		if keys[pygame.K_3]:
+			self.selectedslot_id = 3
+		if keys[pygame.K_4]:
+			self.selectedslot_id = 4
+		if keys[pygame.K_5]:
+			self.selectedslot_id = 5
+		if keys[pygame.K_6]:
+			self.selectedslot_id = 6
+		if keys[pygame.K_8]:
+			self.selectedslot_id = 8
+		if keys[pygame.K_9]:
+			self.selectedslot_id = 9
+		
 		if keys[pygame.K_DOWN]:
 			self.crouching = True
 		
@@ -88,7 +115,7 @@ class player:
 		else:
 			self.on_ground = False
 	
-	def draw(self, screen):
+	def draw_plr(self, screen):
 		img = self.rat_stand
 		draw_y = self.y
 		if self.crouching:
@@ -99,8 +126,20 @@ class player:
 		else:
 			flipped = pygame.transform.flip(img, True, False)
 			screen.blit(flipped, (self.x, draw_y))
-			
-		
+	
+	def draw_inv(self, screen):
+		id = 0
+		for i in range(0,9):
+			id += 1
+			img = pygame.transform.scale(self.invslot, (64, 64))
+			if 9-self.selectedslot_id == id:
+				img = pygame.transform.scale(self.selectedslot, (64, 64))
+			screen.blit(img, (8*64 - i*64, 0))
+		for item in self.inventory:
+			if item != 0:
+				img = pygame.transform.scale(item_textures[item], (64, 64))
+				screen.blit(img, (8*64 - i*64, 0))
+	
 rat = player(5 * tile_size, 5 * tile_size)
 
 while True:
@@ -117,6 +156,7 @@ while True:
 			screen.blit(tile, (x *tile_size, y * tile_size))
 
 	rat.update(keys)
-	rat.draw(screen)
+	rat.draw_plr(screen)
+	rat.draw_inv(screen)
 	pygame.display.flip()
 	clock.tick(60)
