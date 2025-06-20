@@ -3,6 +3,13 @@ import sys
 
 pygame.init()
 
+pygame.init()
+
+pygame.mixer.init()
+pygame.mixer.music.load('resources/sounds/music.mp3')
+pygame.mixer.music.set_volume(1)  # volume from 0.0 to 1.0
+pygame.mixer.music.play(-1)  # -1 = loop forever
+
 tile_size = 16
 
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -14,7 +21,7 @@ map_height = screen_height // tile_size
 clock = pygame.time.Clock()
 
 tile_textures = {
-	0: pygame.image.load('resources/img/block_air.png'),
+	0: pygame.image.load('resources/img/block_air2.png'),
 	1: pygame.image.load('resources/img/block_dirt.png'),
 	2: pygame.image.load('resources/img/block_stone.png')
 }
