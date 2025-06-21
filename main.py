@@ -64,7 +64,7 @@ class player:
 		self.x = x
 		self.y = y
 		self.vel_y = 0
-		self.speed = 10
+		self.speed = 7
 		self.on_ground = False
 		self.gravity = 0.3
 		self.jump_force = -6
@@ -81,22 +81,38 @@ class player:
 	
 	def update(self, keys, mouse_buttons):
 		if keys[pygame.K_LEFT]:
-			self.x -= self.speed
+			newx = self.x - self.speed
+			checkheight = 8
+			if self.crouching:
+				checkheight = 16
+			if not is_solid(newx - 16, self.y + checkheight):
+				self.x = newx
 			self.facing_right = False
 			
 		if keys[pygame.K_RIGHT]:
-			self.x += self.speed
+			newx = self.x + self.speed
+			checkheight = 8
+			if self.crouching:
+				checkheight = 16
+			if not is_solid(newx + 16, self.y + checkheight):
+				self.x = newx
 			self.facing_right = True
 
 		if event.type == pygame.KEYDOWN:
 			if keys[pygame.K_UP]:
 				if self.crouching == True:
-					self.crouching = False
+					if is_solid(self.x + 8, self.y) == False:
+						self.crouching = False
 				else:
 					if self.on_ground:
 						self.vel_y = self.jump_force
 						self.on_ground = False
 						sounds['jump'].play()
+						
+		if event.type == pygame.KEYDOWN:
+			if keys[pygame.K_DOWN] and self.crouching == False:
+				self.crouching = True
+				sounds['crouch'].play()
 		
 		if keys[pygame.K_1]:
 			self.selectedslot_id = 0
@@ -118,11 +134,6 @@ class player:
 			self.selectedslot_id = 8
 		if keys[pygame.K_0]:
 			self.selectedslot_id = 9
-
-		if event.type == pygame.KEYDOWN:
-			if keys[pygame.K_DOWN]:
-				self.crouching = True
-				sounds['crouch'].play()
 		
 		# breaking blocks *-*
 		if mouse_buttons[0]:
@@ -131,22 +142,34 @@ class player:
 				mouse_x, mouse_y = pygame.mouse.get_pos()
 				target_x = mouse_x // tile_size
 				target_y = mouse_y // tile_size
+				player_tilex = (self.x+8) // tile_size
+				player_tiley = (self.y+16) // tile_size
+				
+				distx = abs(player_tilex - target_x)
+				disty = abs(player_tiley - target_y)
 				
 				if 0 <= target_x < map_width and 0 <= target_y < map_width:
 					block_id = world[target_y][target_x]
-					if block_id != 0:
+					if block_id != 0 and (distx <= 6 and disty <= 5):
 						world[target_y][target_x] = 0
 						sounds['break'].play()
 		
-		self.vel_y += self.gravity # gravity stops my up speed and starts fall speed
-		self.y += self.vel_y # update my y with my speed
-		
-		if is_solid(self.x + 8, self.y + 31): # gets center bottom of rat
-			self.y = ((self.y + 31) // tile_size) * tile_size - 32
-			self.vel_y = 0
-			self.on_ground = True
-		else:
-			self.on_ground = False
+		self.vel_y += self.gravity
+		new_y = self.y + self.vel_y
+
+		if self.vel_y > 0:  # Falling
+			if is_solid(self.x + 8, new_y + 31):
+				self.y = ((new_y + 31) // tile_size) * tile_size - 32
+				self.vel_y = 0
+				self.on_ground = True
+			else:
+				self.y = new_y
+				self.on_ground = False
+		elif self.vel_y < 0:  # Jumping
+			if is_solid(self.x + 8, new_y):
+				self.vel_y = 0  # bumping into ceiling
+			else:
+				self.y = new_y
 	
 	def draw_plr(self, screen):
 		img = self.rat_stand
