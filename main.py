@@ -88,14 +88,15 @@ class player:
 			self.x += self.speed
 			self.facing_right = True
 
-		if keys[pygame.K_UP]:
-			if self.crouching == True:
-				self.crouching = False
-			else:
-				if self.on_ground:
-					self.vel_y = self.jump_force
-					self.on_ground = False
-					sounds['jump'].play()
+		if event.type == pygame.KEYDOWN:
+			if keys[pygame.K_UP]:
+				if self.crouching == True:
+					self.crouching = False
+				else:
+					if self.on_ground:
+						self.vel_y = self.jump_force
+						self.on_ground = False
+						sounds['jump'].play()
 		
 		if keys[pygame.K_1]:
 			self.selectedslot_id = 0
@@ -118,9 +119,10 @@ class player:
 		if keys[pygame.K_0]:
 			self.selectedslot_id = 9
 
-		if keys[pygame.K_DOWN]:
-			self.crouching = True
-			sounds['crouch'].play()
+		if event.type == pygame.KEYDOWN:
+			if keys[pygame.K_DOWN]:
+				self.crouching = True
+				sounds['crouch'].play()
 		
 		# breaking blocks *-*
 		if mouse_buttons[0]:
