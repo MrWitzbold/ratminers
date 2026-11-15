@@ -473,6 +473,8 @@ class Inventory(Container):
 # =============================================================================
 class ItemDrop:
     GRAVITY = 700.0
+    SIZE = 10
+    HALF_SIZE = SIZE / 2
 
     def __init__(self, cx, cy, item_id, amount=1):
         self.x = float(cx)
@@ -488,24 +490,59 @@ class ItemDrop:
 
     def update(self, world, dt):
         self.age += dt
+
         if self.grounded:
             self.bob_phase += 4.0 * dt
             return
 
         self.vy = min(self.vy + self.GRAVITY * dt, 600.0)
-        self.x += self.vx * dt
-        self.y += self.vy * dt
-        self.vx *= 0.95
 
-        if self.vy > 0:
-            bottom = self.y + 4
-            feet_ty = int(bottom // TILE_SIZE)
-            mid_tx = int(self.x // TILE_SIZE)
-            if world.is_solid(mid_tx, feet_ty):
-                self.y = feet_ty * TILE_SIZE - 4
-                self.vy = 0.0
-                self.vx = 0.0
-                self.grounded = True
+        # Horizontal movement and collision
+        self.x += self.vx * dt
+
+        left_tx = int((self.x - self.HALF_SIZE) // TILE_SIZE)
+        right_tx = int((self.x + self.HALF_SIZE - 0.001) // TILE_SIZE)
+
+        top_ty = int((self.y - self.HALF_SIZE) // TILE_SIZE)
+        bottom_ty = int((self.y + self.HALF_SIZE - 0.001) // TILE_SIZE)
+
+        for ty in range(top_ty, bottom_ty + 1):
+            for tx in range(left_tx, right_tx + 1):
+                if world.is_solid(tx, ty):
+                    if self.vx > 0:
+                        self.x = tx * TILE_SIZE - self.HALF_SIZE
+                    elif self.vx < 0:
+                        self.x = (tx + 1) * TILE_SIZE + self.HALF_SIZE
+
+                    self.vx = 0.0
+
+        # Vertical movement and collision
+        self.y += self.vy * dt
+
+        left_tx = int((self.x - self.HALF_SIZE) // TILE_SIZE)
+        right_tx = int((self.x + self.HALF_SIZE - 0.001) // TILE_SIZE)
+
+        top_ty = int((self.y - self.HALF_SIZE) // TILE_SIZE)
+        bottom_ty = int((self.y + self.HALF_SIZE - 0.001) // TILE_SIZE)
+
+        for ty in range(top_ty, bottom_ty + 1):
+            for tx in range(left_tx, right_tx + 1):
+                if world.is_solid(tx, ty):
+                    if self.vy > 0:
+                        self.y = ty * TILE_SIZE - self.HALF_SIZE
+                        self.grounded = True
+                    elif self.vy < 0:
+                        self.y = (ty + 1) * TILE_SIZE + self.HALF_SIZE
+
+                    self.vy = 0.0
+                    self.vx *= 0.5
+                    break
+
+            if self.grounded:
+                break
+
+        # Small horizontal friction
+        self.vx *= 0.95
 
     @property
     def can_pickup(self):
@@ -515,13 +552,16 @@ class ItemDrop:
         item_def = ITEM_DEFS.get(self.item_id)
         if item_def is None or item_def.get("image") is None:
             return
-        size = 10
+
+        size = self.SIZE
         image = pygame.transform.scale(item_def["image"], (size, size))
+
         bob = math.sin(self.bob_phase) * 2 if self.grounded else 0
+
         sx = int(self.x - size / 2) - int(camera.x)
         sy = int(self.y - size / 2 + bob) - int(camera.y)
-        surface.blit(image, (sx, sy))
 
+        surface.blit(image, (sx, sy))
 
 # =============================================================================
 # PARTICLE
